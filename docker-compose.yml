@@ -1,0 +1,30 @@
+version: "2"
+
+services:
+  db:
+    image: mariadb:10.3
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+  php:
+    build: ./deploy/php
+    volumes:
+      - ./:/code
+    environment:
+      DB_HOST: db
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_PORT: 3306
+
+  nginx:
+    image: nginx:1.13
+    volumes_from:
+      - php
+    ports:
+      - '8000:80'
+    volumes:
+      - ./deploy/nginx/config/drupal.conf:/etc/nginx/conf.d/default.conf:ro
