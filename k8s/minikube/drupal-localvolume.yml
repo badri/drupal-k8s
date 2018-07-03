@@ -1,0 +1,11 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: drupal-volume
+spec:
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /tmp/drupal
+  capacity:
+      storage: 2Gi

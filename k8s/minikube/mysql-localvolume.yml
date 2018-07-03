@@ -1,0 +1,11 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: mysql-volume
+spec:
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /tmp/d8-mysql
+  capacity:
+      storage: 2Gi

@@ -1,0 +1,39 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: drupal
+  labels:
+    app: drupal
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drupal
+  template:
+    metadata:
+      labels:
+        app: drupal
+    spec:
+      containers:
+        - image: lakshminp/drupal-8:2.1
+          name: drupal
+          env:
+          - name: DB_NAME
+            value: "drupal8"
+          - name: DB_USER
+            value: "root"
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql
+                key: password
+          ports:
+            - containerPort: 80
+              name: drupal
+          volumeMounts:
+            - name: drupal-persistent-storage
+              mountPath: /var/www/html/web/sites/default/files
+      volumes:
+        - name: drupal-persistent-storage
+          persistentVolumeClaim:
+            claimName: drupal-pvc
