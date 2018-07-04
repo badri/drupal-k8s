@@ -38,28 +38,13 @@ RUN { \
 COPY . /var/www/html/
 RUN chown -R www-data:www-data /var/www/html/
 
+RUN chmod -R a+w /var/www/html/web/sites/default/files
+
 # composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 RUN composer install
 
 
-# Drush and drupal console - 1.1
-RUN set -ex; \
-    \
-    # Drush
-    composer global require drush/drush:^8.0; \
-    \
-    # Drush launcher
-    wget -O drush.phar \
-        "https://github.com/drush-ops/drush-launcher/releases/download/0.6.0/drush.phar"; \
-    chmod +x drush.phar; \
-    mv drush.phar /usr/local/bin/drush; \
-    \
-    # Drupal console
-    curl https://drupalconsole.com/installer -L -o drupal.phar; \
-    mv drupal.phar /usr/local/bin/drupal; \
-    chmod +x /usr/local/bin/drupal; \
-    \
-    # Clean up
-    composer clear-cache;
+# Drush
+RUN composer require drush/drush;
