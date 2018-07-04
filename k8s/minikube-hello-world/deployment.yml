@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-hello-world-deployment
+  labels:
+    app: php
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: php
+  template:
+    metadata:
+      labels:
+        app: php
+    spec:
+      containers:
+      - name: php-hello-world
+        image: lakshminp/php-k8s:v1
+        ports:
+        - containerPort: 8080
