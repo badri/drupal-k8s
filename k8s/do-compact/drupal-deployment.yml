@@ -30,7 +30,7 @@ spec:
         app: drupal
     spec:
       containers:
-        - image: lakshminp/drupal-8:plain-1
+        - image: lakshminp/drupal-8:plain-2
           name: drupal
           env:
           - name: MYSQL_DATABASE

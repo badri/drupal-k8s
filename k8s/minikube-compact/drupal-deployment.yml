@@ -43,7 +43,7 @@ spec:
         app: drupal
     spec:
       containers:
-        - image: lakshminp/drupal-8:plain-3
+        - image: lakshminp/drupal-8:plain-1
           name: drupal
           env:
           - name: MYSQL_DATABASE

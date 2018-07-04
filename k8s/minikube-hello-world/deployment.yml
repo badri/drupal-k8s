@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: php-hello-world
-        image: lakshminp/php-k8s:v1
+        image: lakshminp/php-k8s:v2
         ports:
         - containerPort: 8080
