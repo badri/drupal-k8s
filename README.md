@@ -1,144 +1,313 @@
-# Composer template for Drupal projects
+# Dev Days Lisbon 2018 Kubernetes workshop
 
-[![Build Status](https://travis-ci.org/drupal-composer/drupal-project.svg?branch=8.x)](https://travis-ci.org/drupal-composer/drupal-project)
+Held [here](https://lisbon2018.drupaldays.org/sessions/helmsman-and-water-drop-running-drupal-kubernetes).
 
-This project template provides a starter kit for managing your site
-dependencies with [Composer](https://getcomposer.org/).
+## Prerequisites
 
-If you want to know how to use it as replacement for
-[Drush Make](https://github.com/drush-ops/drush/blob/8.x/docs/make.md) visit
-the [Documentation on drupal.org](https://www.drupal.org/node/2471553).
+Make sure you have the following installed on your local machine:
 
-## Usage
+ - Docker: For building your container images and pushing them to a docker registry of choice.
+ - Minikube: For running a local 1-node K8s cluster
+ - Kubectl: For communicating with different k8s clusters
+ 
+## Minikube setup
 
-First you need to [install composer](https://getcomposer.org/doc/00-intro.md#installation-linux-unix-osx).
-
-> Note: The instructions below refer to the [global composer installation](https://getcomposer.org/doc/00-intro.md#globally).
-You might need to replace `composer` with `php composer.phar` (or similar) 
-for your setup.
-
-After that you can create the project:
+Boot minikube.
 
 ```
-composer create-project drupal-composer/drupal-project:8.x-dev some-dir --stability dev --no-interaction
+minikube start
 ```
 
-With `composer require ...` you can download new dependencies to your 
-installation.
+You can check status of your minikube cluster by running,
 
 ```
-cd some-dir
-composer require drupal/devel:~1.0
+minikube status
 ```
 
-The `composer create-project` command passes ownership of all files to the 
-project that is created. You should create a new git repository, and commit 
-all files not excluded by the .gitignore file.
+## Build a Hello World PHP docker image
 
-## What does the template do?
+This is just to get the hang of deploying a small application using k8s. Substitute `<namespace>` with your Dockerhub namespace in all commands.
 
-When installing the given `composer.json` some tasks are taken care of:
-
-* Drupal will be installed in the `web`-directory.
-* Autoloader is implemented to use the generated composer autoloader in `vendor/autoload.php`,
-  instead of the one provided by Drupal (`web/vendor/autoload.php`).
-* Modules (packages of type `drupal-module`) will be placed in `web/modules/contrib/`
-* Theme (packages of type `drupal-theme`) will be placed in `web/themes/contrib/`
-* Profiles (packages of type `drupal-profile`) will be placed in `web/profiles/contrib/`
-* Creates default writable versions of `settings.php` and `services.yml`.
-* Creates `web/sites/default/files`-directory.
-* Latest version of drush is installed locally for use at `vendor/bin/drush`.
-* Latest version of DrupalConsole is installed locally for use at `vendor/bin/drupal`.
-* Creates environment variables based on your .env file. See [.env.example](.env.example).
-
-## Updating Drupal Core
-
-This project will attempt to keep all of your Drupal Core files up-to-date; the 
-project [drupal-composer/drupal-scaffold](https://github.com/drupal-composer/drupal-scaffold) 
-is used to ensure that your scaffold files are updated every time drupal/core is 
-updated. If you customize any of the "scaffolding" files (commonly .htaccess), 
-you may need to merge conflicts if any of your modified files are updated in a 
-new release of Drupal core.
-
-Follow the steps below to update your core files.
-
-1. Run `composer update drupal/core webflo/drupal-core-require-dev symfony/* --with-dependencies` to update Drupal Core and its dependencies.
-1. Run `git diff` to determine if any of the scaffolding files have changed. 
-   Review the files for any changes and restore any customizations to 
-  `.htaccess` or `robots.txt`.
-1. Commit everything all together in a single commit, so `web` will remain in
-   sync with the `core` when checking out branches or running `git bisect`.
-1. In the event that there are non-trivial conflicts in step 2, you may wish 
-   to perform these steps on a branch, and use `git merge` to combine the 
-   updated core files with your customized files. This facilitates the use 
-   of a [three-way merge tool such as kdiff3](http://www.gitshah.com/2010/12/how-to-setup-kdiff-as-diff-tool-for-git.html). This setup is not necessary if your changes are simple; 
-   keeping all of your modifications at the beginning or end of the file is a 
-   good strategy to keep merges easy.
-
-## Generate composer.json from existing project
-
-With using [the "Composer Generate" drush extension](https://www.drupal.org/project/composer_generate)
-you can now generate a basic `composer.json` file from an existing project. Note
-that the generated `composer.json` might differ from this project's file.
-
-
-## FAQ
-
-### Should I commit the contrib modules I download?
-
-Composer recommends **no**. They provide [argumentation against but also 
-workrounds if a project decides to do it anyway](https://getcomposer.org/doc/faqs/should-i-commit-the-dependencies-in-my-vendor-directory.md).
-
-### Should I commit the scaffolding files?
-
-The [drupal-scaffold](https://github.com/drupal-composer/drupal-scaffold) plugin can download the scaffold files (like
-index.php, update.php, …) to the web/ directory of your project. If you have not customized those files you could choose
-to not check them into your version control system (e.g. git). If that is the case for your project it might be
-convenient to automatically run the drupal-scaffold plugin after every install or update of your project. You can
-achieve that by registering `@drupal-scaffold` as post-install and post-update command in your composer.json:
-
-```json
-"scripts": {
-    "drupal-scaffold": "DrupalComposer\\DrupalScaffold\\Plugin::scaffold",
-    "post-install-cmd": [
-        "@drupal-scaffold",
-        "..."
-    ],
-    "post-update-cmd": [
-        "@drupal-scaffold",
-        "..."
-    ]
-},
 ```
-### How can I apply patches to downloaded modules?
+cd k8s/minikube-hello-world
 
-If you need to apply patches (depending on the project being modified, a pull 
-request is often a better solution), you can do so with the 
-[composer-patches](https://github.com/cweagans/composer-patches) plugin.
-
-To add a patch to drupal module foobar insert the patches section in the extra 
-section of composer.json:
-```json
-"extra": {
-    "patches": {
-        "drupal/foobar": {
-            "Patch description": "URL or local path to patch"
-        }
-    }
-}
+docker build <namespace>/php-k8s:v1 .
 ```
-### How do I switch from packagist.drupal-composer.org to packages.drupal.org?
 
-Follow the instructions in the [documentation on drupal.org](https://www.drupal.org/docs/develop/using-composer/using-packagesdrupalorg).
+Push your image to Dockerhub public registry. Make sure you have logged in to your Dockerhub account using `docker login`.
 
-### How do I specify a PHP version ?
-
-Currently Drupal 8 supports PHP 5.5.9 as minimum version (see [Drupal 8 PHP requirements](https://www.drupal.org/docs/8/system-requirements/drupal-8-php-requirements)), however it's possible that a `composer update` will upgrade some package that will then require PHP 7+.
-
-To prevent this you can add this code to specify the PHP version you want to use in the `config` section of `composer.json`:
-```json
-"config": {
-    "sort-packages": true,
-    "platform": {"php": "5.5.9"}
-},
 ```
+docker push <namespace>/php-k8s:v1
+```
+
+## Deploy your first application to K8s
+
+Pods are the basic units of a K8s cluster.
+
+```
+kubectl get pods
+```
+
+You should get "no resources found".
+
+Deploy the image we previously created
+
+```
+kubectl run hello-world --image=<namespace>/php-k8s:v1 --port=8080
+```
+
+Expose your pods to outside world using services.
+
+```
+kubectl expose deployment hello-world --type=LoadBalancer
+```
+
+Open service in browser.
+
+```
+minikube service hello-world
+```
+
+## Deploy the same application using YAML manifests
+
+Apply the deployment.
+
+```
+cd k8s/minikube-hello-world
+kubectl apply -f deployment.yml 
+```
+
+Apply the service.
+
+```
+kubectl apply -f service.yml 
+```
+### Get the name of a pod
+
+First, get the list of pods.
+
+```
+kubectl get po
+
+NAME                                          READY     STATUS    RESTARTS   AGE
+drupal-56f6c47f76-l8fkn                       1/1       Running   0          1h
+hello-world-6686ff999b-wh2tr                  1/1       Running   0          2h
+mysql-7fd9c8467d-22zg4                        1/1       Running   0          1h
+php-hello-world-deployment-78dc8f54cc-9jkf8   1/1       Running   0          2h
+php-hello-world-deployment-78dc8f54cc-wkdtc   1/1       Running   0          2h
+php-hello-world-deployment-78dc8f54cc-zzgnt   1/1       Running   0          2h
+```
+
+The first column is the pod name. Substitute `<pod-name>` with the pod name you want in upcoming commands.
+
+### Delete a pod
+
+We have set a replication factor of 3 for the hello-world PHP pod. Let's try to delete one of the pods.
+
+```
+kubectl delete pods <pod-name>
+```
+
+K8s will automatically re-provision a new pod to maintain the replication factor of 3.
+
+### Deploy a new image
+
+```
+cd k8s/minikube-hello-world
+```
+
+Change the `index.php` to add some text.
+
+Rebuild the new image.
+
+```
+docker build -t <namespace>/php-k8s:v2
+```
+
+Push to Docker Registry.
+
+```
+docker push <namespace>/php-k8s:v2
+```
+
+
+Open `deployment.yml` and edit the image to point to new version,
+
+```yaml
+    spec:
+      containers:
+      - name: php-hello-world
+        image: <namespace>/php-k8s:v2
+        ports:
+        - containerPort: 8080
+
+```
+
+And apply the deployment again.
+
+```
+kubectl apply -f deployment.yml 
+```
+
+Verify that your change is reflected by visiting the service.
+
+```
+minikube service php-hello-world-svc # this is the service name you have in service.yml file
+```
+
+## Deploy Drupal 8 on Minikube
+
+Drupal and MySQL have persistent volumes. K8s is a container based system, so no data is persisted and pods are ephermeral, like containers. We use a new set of resources called volumes and volume claims to persist app data between deployments.
+
+### Create persistent volumes
+
+```
+cd k8s/minikube-compact
+kubectl apply -f local-volumes.yml
+```
+
+Get the volumes in system using,
+
+```
+kubectl get pv
+```
+
+### Create a MySQL related secret(password)
+
+Instead of openly adding the MySQL password, we create a new K8s construct called `secret`.
+
+```
+kubectl create secret generic mysql --from-literal=password=<your-mysql-password>
+```
+
+### Apply a MySQL deployment
+
+This will create the pods, services and volume claims associated with the database.
+
+```
+kubectl apply -f mysql-deployment.yml
+```
+
+Check the persistent volume claim by running,
+
+```
+kubectl get pvc
+```
+
+### Create Drupal image
+
+Go to the top level directory in the repo you cloned and run,
+
+```
+docker build -t <namespace>/drupal-8:plain-1
+```
+
+Visit the `Dockerfile` at the top level directory to see how the image is built, and to make any needed changes.
+
+Push to registry.
+
+```
+docker push <namespace>/drupal-8:plain-1
+```
+
+### Apply a Drupal deployment
+
+```
+cd k8s/minikube-compact
+```
+
+Change the image if needed in the deployment manifest,
+
+```yaml
+  template:
+    metadata:
+      labels:
+        app: drupal
+    spec:
+      containers:
+        - image: <namespace>/drupal-8:plain-1
+          name: drupal
+          env:
+```
+
+Apply deployment.
+
+```
+kubectl apply -f drupal-deployment.yml
+```
+
+### Get logs of a pod
+
+To tail the pod logs,
+
+```
+kubectl logs -f <pod-name>
+```
+
+### Describe a pod
+
+to show the status, history of state and other metadata associated with a pod.
+
+```
+kubectl describe po <pod-name>
+```
+
+### Using drush inside a pod
+
+To ssh into your pod,
+
+```
+kubectl exec -it <pod-name> -- /bin/bash
+```
+
+```
+./vendor/bin/drush si --db-url="mysql://root:<password-you-gave-when-creating-secret>/drupal8" -y
+```
+
+Make sure you copy the admin password drush site-install generates for you.
+
+Exit shell and run Drupal.
+
+```
+minikube service drupal # the service name you gave in drupal-deployment.yml
+```
+
+### Deploy a change to Drupal in Minikube
+
+Let's make a change on our codebase, like download the devel module.
+
+Go to the top level directory, and run
+
+```
+composer require drupal/devel
+```
+
+Build a new version of docker image,
+
+```
+docker build -t <namespace>/drupal-8:plain-2
+```
+
+Push to registry,
+
+```
+docker push <namespace>/drupal-8:plain-2
+```
+
+Change the image in deployment manifest and apply new deployment, as mentioned in the "Apply a Drupal deployment" section above.
+
+
+Confirm that devel module is present in the modules/extend page.
+
+```
+minikube service drupal
+```
+
+## TODO
+
+- Create K8s cluster on a cloud provider
+- Deploy Drupal in a K8s cluster running in the cloud
+- Point to a domain/create ingress
+
+## Contact
+Please mail to "lakshmi@lakshminp.com" with "k8s workshop" in the subject.
